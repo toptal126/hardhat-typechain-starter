@@ -108,18 +108,9 @@ describe("SimpleVault", function () {
       const claimAmount = 1_000;
 
       // Encode the claim data and hash it
-      // const abi = new AbiCoder();
-      // const messageHash = keccak256(
-      //   abi.encode(
-      //     ["address", "address", "uint256"],
-      //     [user.address, tokenAddress, claimAmount]
-      //   )
-      // );
-
-      const messageHash = await simpleVault.getMessageHash(
-        user.address,
-        tokenAddress,
-        claimAmount
+      const messageHash = ethers.solidityPackedKeccak256(
+        ["address", "address", "uint256"],
+        [user.address, tokenAddress, claimAmount]
       );
 
       // Sign the message with the signer's private key, ****most important****
