@@ -26,9 +26,11 @@
   "scripts": {
     "test": "npx hardhat test",
     "typechain": "npx hardhat typechain",
-    "compile": "npx hardhat compile"
+    "compile": "npx hardhat compile",
+    "deploy": "npx hardhat run scripts/deploy-simple-vault.ts"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^5.1.0"
+    "@openzeppelin/contracts": "^5.1.0",
+    "dotenv": "^16.4.7"
   }
 }

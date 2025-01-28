@@ -1,6 +1,8 @@
 import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
 
+require("dotenv").config();
+
 const config: HardhatUserConfig = {
   solidity: "0.8.28",
   networks: {
@@ -11,6 +13,10 @@ const config: HardhatUserConfig = {
       forking: {
         url: "https://rpc.ankr.com/eth_holesky",
       },
+    },
+    holesky: {
+      url: "https://rpc.ankr.com/eth_holesky",
+      accounts: [process.env.ACCOUNT!],
     },
   },
   etherscan: {

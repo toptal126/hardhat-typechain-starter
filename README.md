@@ -16,3 +16,9 @@ npx hardhat ignition deploy ./ignition/modules/Lock.ts
 npx hardhat verify --network base 0x55EdF6bc7AeD655D6B3caA77CFFB4217AEE24546 'YouAreMyFirst' 'YAMF' 200000000
 npx hardhat verify --network base 0x55EdF6bc7AeD655D6B3caA77CFFB4217AEE24546 'YouAreMyFirst' 'YAMF' 200000000000000000000000000
 ```
+
+Deploying
+
+```shell
+yarn deploy --network holesky
+```
