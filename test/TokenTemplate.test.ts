@@ -77,6 +77,13 @@ describe("SimpleVault", function () {
     // Deploy SimpleVault with signer address
     const SimpleVault = await ethers.getContractFactory("SimpleVault");
     const simpleVault = await SimpleVault.deploy(signer.address);
+
+    // To exempt a liquidity pair
+    // await testToken.updateExemptStatus(liquidityPairAddress, true);
+
+    // To exempt a vault
+    await testToken.updateExemptStatus(await simpleVault.getAddress(), true);
+
     // Transfer some tokens to the vault
     await testToken.transfer(await simpleVault.getAddress(), 10_000);
 
@@ -105,8 +112,12 @@ describe("SimpleVault", function () {
       );
 
       const tokenAddress = await testToken.getAddress();
-      const claimAmount = 1_000;
+      const claimAmount = 100;
 
+      // const testHash = await simpleVault.toEthSignedMessageHash(
+      //   "0x6fa8522e46c33fad18b8a59687c3f40dfe6aefd0ed01eca7546ee8f59abe49f33b9f1bdba6f005e405c4ed018130d0d78810f0a057c68202c96a9d83767853511b"
+      // );
+      // console.log(testHash);
       // Encode the claim data and hash it
       const messageHash = ethers.solidityPackedKeccak256(
         ["address", "address", "uint256"],
@@ -117,6 +128,7 @@ describe("SimpleVault", function () {
       const signature = await signer.signMessage(ethers.toBeArray(messageHash));
       // recover _messageHash from signature using signer offchain
 
+      console.log("signature", signature.length);
       // User claims tokens
       await expect(
         simpleVault.connect(user).claim(tokenAddress, claimAmount, signature)
@@ -131,97 +143,8 @@ describe("SimpleVault", function () {
       );
 
       expect(userBalance).to.equal(claimAmount);
-      expect(vaultBalance).to.equal(9_000);
+      expect(vaultBalance).to.equal(9_900);
     });
-
-    // it("Should reject a claim with an invalid signature", async function () {
-    //   const { simpleVault, testToken, user } = await loadFixture(
-    //     deployVaultFixture
-    //   );
-
-    //   const tokenAddress = await testToken.getAddress();
-    //   const claimAmount = 1_000;
-
-    //   // Fake signature
-    //   const invalidSignature = "0x" + "00".repeat(65);
-    //   await simpleVault
-    //     .connect(user)
-    //     .claim(tokenAddress, claimAmount, invalidSignature);
-
-    //   // await expect(
-    //   //   simpleVault
-    //   //     .connect(user)
-    //   //     .claim(tokenAddress, claimAmount, invalidSignature)
-    //   // ).to.be.revertedWithCustomError
-    // });
-    /*
-    it("Should reject a claim with insufficient tokens in the vault", async function () {
-      const { simpleVault, testToken, signer, user } = await loadFixture(
-        deployVaultFixture
-      );
-
-      const tokenAddress = await testToken.getAddress();
-      const claimAmount = 11_000; // Exceeds the vault balance
-
-      // Encode the claim data and hash it
-      const abi = new AbiCoder();
-      const messageHash = keccak256(
-        abi.encode(
-          ["address", "address", "uint256"],
-          [user.address, tokenAddress, claimAmount]
-        )
-      );
-
-      // Create Ethereum signed message hash
-      const ethSignedMessageHash = hashMessage(getBytes(messageHash));
-
-      // Sign the message with the signer's private key
-      const signature = await signer.signMessage(
-        getBytes(ethSignedMessageHash)
-      );
-
-      await expect(
-        simpleVault.connect(user).claim(tokenAddress, claimAmount, signature)
-      ).to.be.revertedWith("Insufficient balance in vault");
-    });
-
-    it("Should reject a reused signature", async function () {
-      const { simpleVault, testToken, signer, user } = await loadFixture(
-        deployVaultFixture
-      );
-
-      const tokenAddress = await testToken.getAddress();
-      const claimAmount = 1_000;
-
-      // Encode the claim data and hash it
-      const abi = new AbiCoder();
-      const messageHash = keccak256(
-        abi.encode(
-          ["address", "address", "uint256"],
-          [user.address, tokenAddress, claimAmount]
-        )
-      );
-
-      // Create Ethereum signed message hash
-      const ethSignedMessageHash = hashMessage(getBytes(messageHash));
-
-      // Sign the message with the signer's private key
-      const signature = await signer.signMessage(
-        getBytes(ethSignedMessageHash)
-      );
-
-      // First claim
-      await expect(
-        simpleVault.connect(user).claim(tokenAddress, claimAmount, signature)
-      )
-        .to.emit(simpleVault, "Claimed")
-        .withArgs(user.address, tokenAddress, claimAmount);
-
-      // Attempt to reuse the signature
-      await expect(
-        simpleVault.connect(user).claim(tokenAddress, claimAmount, signature)
-      ).to.be.revertedWith("Signature already used");
-    });*/
   });
 
   describe("Admin Functions", function () {
@@ -247,6 +170,106 @@ describe("SimpleVault", function () {
 
       const ownerBalance = await testToken.balanceOf(owner.address);
       expect(ownerBalance).to.equal(withdrawalAmount);
+    });
+  });
+
+  describe("Max Wallet", function () {
+    async function deployTokenFixture() {
+      const [owner, user1, user2] = await ethers.getSigners();
+      const TokenTemplate = await ethers.getContractFactory("TokenTemplate");
+      const token = await TokenTemplate.deploy(
+        "TestToken",
+        "TST",
+        ethers.parseEther("1000000")
+      ); // 1M tokens
+      return { token, owner, user1, user2 };
+    }
+
+    it("Should enforce max wallet limit of 1%", async function () {
+      const { token, owner, user1 } = await loadFixture(deployTokenFixture);
+      const maxTransfer =
+        ((await token.totalSupply()) * BigInt(100)) / BigInt(10000); // 1%
+
+      // Transfer exactly 1% should work
+      await token.transfer(user1.address, maxTransfer);
+      expect(await token.balanceOf(user1.address)).to.equal(maxTransfer);
+
+      // Attempting to transfer more should fail
+      await expect(token.transfer(user1.address, 1n)).to.be.revertedWith(
+        "Exceeds max wallet limit of 1%"
+      );
+    });
+
+    it("Should respect exempt status", async function () {
+      const { token, owner, user1 } = await loadFixture(deployTokenFixture);
+      const transferAmount =
+        ((await token.totalSupply()) * BigInt(2)) / BigInt(100); // 2%
+
+      // Make user1 exempt
+      await token.updateExemptStatus(user1.address, true);
+      expect(await token.isExempt(user1.address)).to.be.true;
+
+      // Transfer more than 1% should work for exempt address
+      await token.transfer(user1.address, transferAmount);
+      expect(await token.balanceOf(user1.address)).to.equal(transferAmount);
+    });
+
+    it("Should disable max wallet after duration", async function () {
+      const { token, owner, user1 } = await loadFixture(deployTokenFixture);
+      const transferAmount =
+        ((await token.totalSupply()) * BigInt(2)) / BigInt(100); // 2%
+
+      // Fast forward past the max wallet deadline (12 hours)
+      await ethers.provider.send("evm_increaseTime", [12 * 60 * 60 + 1]);
+      await ethers.provider.send("evm_mine", []);
+
+      // Transfer more than 1% should work after deadline
+      await token.transfer(user1.address, transferAmount);
+      expect(await token.balanceOf(user1.address)).to.equal(transferAmount);
+    });
+
+    it("Should allow owner to disable max wallet", async function () {
+      const { token, owner, user1 } = await loadFixture(deployTokenFixture);
+      const transferAmount =
+        ((await token.totalSupply()) * BigInt(2)) / BigInt(100); // 2%
+
+      // Disable max wallet
+      await token.disableMaxWallet();
+      expect(await token.maxWalletEnabled()).to.be.false;
+
+      // Transfer more than 1% should work
+      await token.transfer(user1.address, transferAmount);
+      expect(await token.balanceOf(user1.address)).to.equal(transferAmount);
+
+      // Should not be able to disable again
+      await expect(token.disableMaxWallet()).to.be.revertedWith(
+        "Max wallet already disabled"
+      );
+    });
+
+    it("Should correctly report max wallet active status", async function () {
+      const { token, owner } = await loadFixture(deployTokenFixture);
+
+      // Initially active
+      expect(await token.isMaxWalletActive()).to.be.true;
+
+      // After disabling
+      await token.disableMaxWallet();
+      expect(await token.isMaxWalletActive()).to.be.false;
+
+      // Deploy new token and check after duration
+      const TokenTemplate = await ethers.getContractFactory("TokenTemplate");
+      const newToken = await TokenTemplate.deploy(
+        "TestToken2",
+        "TST2",
+        ethers.parseEther("1000000")
+      );
+
+      // Fast forward past deadline
+      await ethers.provider.send("evm_increaseTime", [12 * 60 * 60 + 1]);
+      await ethers.provider.send("evm_mine", []);
+
+      expect(await newToken.isMaxWalletActive()).to.be.false;
     });
   });
 });

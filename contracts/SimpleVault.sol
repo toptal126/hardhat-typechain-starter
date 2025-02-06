@@ -7,9 +7,8 @@ import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract SimpleVault is Ownable {
-    using ECDSA for bytes32;    
+    using ECDSA for bytes32;
     using MessageHashUtils for bytes32;
-
 
     address public signerAddress;
     mapping(bytes32 => bool) public usedSignatures;
@@ -32,25 +31,35 @@ contract SimpleVault is Ownable {
         return keccak256(abi.encodePacked(_to, _tokenAddress, _amount));
     }
 
-    function claim(address _token, uint256 _amount, bytes memory _signature) external {
+    function claim(
+        address _token,
+        uint256 _amount,
+        bytes memory _signature
+    ) external {
         require(_amount > 0, "Amount must be greater than 0");
-        
-        // Create message hash including all required elements        
+
+        // Create message hash including all required elements
         bytes32 messageHash = getMessageHash(msg.sender, _token, _amount);
-        
+
         bytes32 ethSignedMessageHash = messageHash.toEthSignedMessageHash();
-        
+
         // Verify signature
         address recoveredSigner = ethSignedMessageHash.recover(_signature);
-        
+
         require(recoveredSigner == signerAddress, "Invalid signature");
 
         // Prevent signature reuse
-        require(!usedSignatures[ethSignedMessageHash], "Signature already used");
+        require(
+            !usedSignatures[ethSignedMessageHash],
+            "Signature already used"
+        );
         usedSignatures[ethSignedMessageHash] = true;
 
         // Transfer tokens
-        require(IERC20(_token).balanceOf(address(this)) >= _amount, "Insufficient balance in vault");
+        require(
+            IERC20(_token).balanceOf(address(this)) >= _amount,
+            "Insufficient balance in vault"
+        );
         IERC20(_token).transfer(msg.sender, _amount);
 
         emit Claimed(msg.sender, _token, _amount);
