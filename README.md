@@ -15,6 +15,8 @@ npx hardhat ignition deploy ./ignition/modules/Lock.ts
 ```shell
 npx hardhat verify --network base 0x55EdF6bc7AeD655D6B3caA77CFFB4217AEE24546 'YouAreMyFirst' 'YAMF' 200000000
 npx hardhat verify --network base 0x55EdF6bc7AeD655D6B3caA77CFFB4217AEE24546 'YouAreMyFirst' 'YAMF' 200000000000000000000000000
+npx hardhat verify --network bscTestnet 0x55EdF6bc7AeD655D6B3caA77CFFB4217AEE24546 0x29F7073B286273A68Ea565b47a30818a285e2796
+npx hardhat verify --network holesky 0x3BF5aC28f28577540B84C4e8310D99A9910b7C9C 0x29F7073B286273A68Ea565b47a30818a285e2796
 ```
 
 Deploying

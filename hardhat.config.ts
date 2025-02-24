@@ -8,6 +8,7 @@ const config: HardhatUserConfig = {
   networks: {
     base: {
       url: "https://rpc.ankr.com/base",
+      accounts: [process.env.ACCOUNT!],
     },
     hardhat: {
       forking: {
@@ -18,9 +19,23 @@ const config: HardhatUserConfig = {
       url: "https://rpc.ankr.com/eth_holesky",
       accounts: [process.env.ACCOUNT!],
     },
+    bscTestnet: {
+      url: "https://rpc.ankr.com/bsc_testnet_chapel",
+      accounts: [process.env.ACCOUNT!],
+    },
+    bsc: {
+      url: "https://rpc.ankr.com/bsc",
+      accounts: [process.env.ACCOUNT!],
+    },
   },
   etherscan: {
-    apiKey: "1T92MWKCY78FNFX87ZHBCC37FNCQ8GWD1R",
+    apiKey: {
+      mainnet: "1T92MWKCY78FNFX87ZHBCC37FNCQ8GWD1R",
+      base: "1T92MWKCY78FNFX87ZHBCC37FNCQ8GWD1R",
+      holesky: "1T92MWKCY78FNFX87ZHBCC37FNCQ8GWD1R",
+      bscTestnet: "5V3JA6W9PCKE3PJNS8TKUSJHNF73WI6RG4",
+      bsc: "5V3JA6W9PCKE3PJNS8TKUSJHNF73WI6RG4",
+    },
   },
 
   sourcify: {
