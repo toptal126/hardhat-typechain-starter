@@ -27,10 +27,13 @@
     "test": "npx hardhat test",
     "typechain": "npx hardhat typechain",
     "compile": "npx hardhat compile",
-    "deploy": "npx hardhat run scripts/deploy-simple-vault.ts"
+    "deploy:vault": "npx hardhat run scripts/deploy-simple-vault.ts",
+    "deploy:token": "npx hardhat run scripts/deploy-token.ts --network bscTestnet"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^5.1.0",
-    "dotenv": "^16.4.7"
+    "@types/prompt-sync": "^4.2.3",
+    "dotenv": "^16.4.7",
+    "prompt-sync": "^4.2.0"
   }
 }

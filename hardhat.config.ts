@@ -7,24 +7,24 @@ const config: HardhatUserConfig = {
   solidity: "0.8.28",
   networks: {
     base: {
-      url: "https://rpc.ankr.com/base",
+      url: `https://rpc.ankr.com/base/${process.env.ANKR_API}`,
       accounts: [process.env.ACCOUNT!],
     },
     hardhat: {
       forking: {
-        url: "https://rpc.ankr.com/eth_holesky",
+        url: `https://rpc.ankr.com/eth_holesky/${process.env.ANKR_API}`,
       },
     },
     holesky: {
-      url: "https://rpc.ankr.com/eth_holesky",
+      url: `https://rpc.ankr.com/eth_holesky/${process.env.ANKR_API}`,
       accounts: [process.env.ACCOUNT!],
     },
     bscTestnet: {
-      url: "https://rpc.ankr.com/bsc_testnet_chapel",
+      url: `https://rpc.ankr.com/bsc_testnet_chapel/${process.env.ANKR_API}`,
       accounts: [process.env.ACCOUNT!],
     },
     bsc: {
-      url: "https://rpc.ankr.com/bsc",
+      url: `https://rpc.ankr.com/bsc/${process.env.ANKR_API}`,
       accounts: [process.env.ACCOUNT!],
     },
   },
